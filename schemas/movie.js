@@ -6,6 +6,7 @@ var MovieSchema = new mongoose.Schema({
 	language: String,
 	country: String,
 	summary: String,
+	flash: String,
 	poster: String,
 	year: Number,
 	meta: {
@@ -34,13 +35,13 @@ MovieSchema.statics = {
 	fetch: function(cb){
 		return this
 			.find({})
-			.sort('meta.updateAt');
-			exec(cb);
+			.sort('meta.updateAt')
+			.exec(cb);
 	},
 	findById: function(id, cb){
 		return this
-			.findOne({_id: id});
-			exec(cb);
+			.findOne({_id: id})
+			.exec(cb);
 	}
 };
 
