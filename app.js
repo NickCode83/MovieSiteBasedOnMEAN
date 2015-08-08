@@ -1,11 +1,16 @@
 var express = require('express');
 var path = require('path');
+var mongoose = require('mongoose');
+var _ = require('underscore');
+var Movie = require('./models/movie');
 var port = process.env.PORT || 3000;
 var app = express();
 
+mongoose.connect('mongodb://localhost/imooc');
+
 app.set('views', './views/pages');
 app.set('view engine', 'jade');
-
+app.locals.moment = require('moment');
 
 
 
@@ -13,9 +18,9 @@ app.set('view engine', 'jade');
 
 var bodyParser = require('body-parser');
 // parse application/x-www-form-urlencoded
-app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.urlencoded({ extended: true }));
 // parse application/json
-app.use(bodyParser.json());
+//app.use(bodyParser.json());
 
 
 
@@ -28,94 +33,124 @@ console.log('imooc started on port ' + port);
 //route
 //index page
 app.get('/',function(req,res){
-res.render('index',{
-title:'demo1 首页1',
-movies:[{
-title:'钢铁侠',
-_id:1,
-poster:'http://r3.ykimg.com/05160000530EEB63675839160D0B79D5'
-},{
-title:'钢铁侠',
-_id:2,
-poster:'http://r3.ykimg.com/05160000530EEB63675839160D0B79D5'
-},{
-title:'钢铁侠',
-_id:3,
-poster:'http://r3.ykimg.com/05160000530EEB63675839160D0B79D5'
-},{
-title:'钢铁侠',
-_id:4,
-poster:'http://r3.ykimg.com/05160000530EEB63675839160D0B79D5'
-},{
-title:'钢铁侠',
-_id:5,
-poster:'http://r3.ykimg.com/05160000530EEB63675839160D0B79D5'
-},{
-title:'钢铁侠',
-_id:6,
-poster:'http://r3.ykimg.com/05160000530EEB63675839160D0B79D5'
-}]
-});
+	Movie.fetch(function(err, movies){
+		if(err){
+			console.log(err);
+		}
+
+		res.render('index',{
+			title:'imooc 首页1',
+			movies:movies
+
+		});
+
+	});
 });
 
 //detail page
 app.get('/movie/:id',function(req,res){
-res.render('detail',{
-title:'demo1 详情页',
-movie:{
-director:'javan',
-country:'china',
-title:'钢铁侠',
-year:2014,
-poster:'http://r3.ykimg.com/05160000530EEB63675839160D0B79D5',
-language:'chinese',
-flash:'http://player.youku.com/player.php/sid/XNjA1Njc0NTUy/v.swf',
-summary:'中国制造中国制造中国制造中国制造中国制造中国制造中国制造中国制造中国制造'
-}
+	var id = req.params.id;
+
+	
+	Movie.findById(id, function(err, movie){
+		
+		if(err){
+			console.log(err);
+		}
+		res.render('detail', {
+			title:'imooc ' + movie.title,
+			movie:movie
+		});
+	});
+	
 });
+
+//admin update movie
+app.get('/admin/update/:id', function(req, res){
+	var id = req.params.id;
+
+	if(id){
+		Movie.findById(id, function(err, movie){
+			res.render('admin', {
+				title: 'imooc 后台更新页',
+				movie:movie
+			});
+		});
+	}
+});
+
+//admin post movie
+app.post('/admin/movie/new', function(req, res){
+	var id = req.body.movie._id;
+	var movieObj = req.body.movie;
+	var _movie;
+
+	if(id !== 'undefined'){
+		Movie.findById(id, function(err, movie){
+			if(err){
+				console.log(err);
+			}
+
+			_movie = _.extend(movie, movieObj);
+			_movie.save(function(err, movie){
+				if(err){
+					console.log(err);
+				}
+
+				res.redirect('/movie/' + movie._id);
+			});
+		});
+	}else{
+		_movie = new Movie({
+			director: movieObj.director,
+			title: movieObj.title,
+			country: movieObj.country,
+			language: movieObj.language,
+			year: movieObj.year,
+			poster: movieObj.poster,
+			summary: movieObj.summary,
+			flash: movieObj.flash
+		});
+
+		_movie.save(function(err, movie){
+			if(err){
+				console.log(err);
+			}
+
+			res.redirect('/movie/' + movie._id);
+		});
+	}
 });
 
 //list page
 app.get('/admin/list',function(req,res){
-res.render('list',{
-title:'demo1 列表页',
-movies:[{
-_id:1,
-director:'javan',
-country:'china',
-title:'钢铁侠',
-year:2014,
-poster:'http://r3.ykimg.com/05160000530EEB63675839160D0B79D5',
-language:'chinese',
-flash:'http://player.youku.com/player.php/sid/XNjA1Njc0NTUy/v.swf',
-summary:'中国制造中国制造中国制造中国制造中国制造中国制造中国制造中国制造中国制造'
-},{
-_id:2,
-director:'javan',
-country:'china',
-title:'钢铁侠',
-year:2014,
-poster:'http://r3.ykimg.com/05160000530EEB63675839160D0B79D5',
-language:'chinese',
-flash:'http://player.youku.com/player.php/sid/XNjA1Njc0NTUy/v.swf',
-summary:'中国制造中国制造中国制造中国制造中国制造中国制造中国制造中国制造中国制造'
-}]
-});
+	
+	Movie.fetch(function(err, movies){
+		if(err){
+			console.log(err);
+		}
+
+		res.render('list',{
+			title:'imooc 列表页',
+			movies:movies
+
+		});
+	});
 });
 
 //admin page
 app.get('/admin/movie',function(req,res){
-res.render('admin',{
-title:'demo1 后台录入页',
-movie:{
-director:'',
-country:'',
-title:'',
-year:'',
-poster:'',
-language:'',
-flash:'',
-summary:''
-}
-});
+  res.render('admin',{
+    title:'imooc 后台录入页',
+    movie:{
+      director:'',
+      country:'',
+      title:'',
+      year:'',
+      poster:'',
+      language:'',
+      flash:'',
+      summary:''
+    }
+  });
 });
