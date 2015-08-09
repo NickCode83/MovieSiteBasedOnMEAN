@@ -25,7 +25,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 
 
-app.use(express.static(path.join(__dirname,'bower_components')));
+app.use(express.static(path.join(__dirname,'public')));
 app.listen(port);
 
 console.log('imooc started on port ' + port);
@@ -140,17 +140,32 @@ app.get('/admin/list',function(req,res){
 
 //admin page
 app.get('/admin/movie',function(req,res){
-  res.render('admin',{
-    title:'imooc 后台录入页',
-    movie:{
-      director:'',
-      country:'',
-      title:'',
-      year:'',
-      poster:'',
-      language:'',
-      flash:'',
-      summary:''
-    }
-  });
+	res.render('admin',{
+		title:'imooc 后台录入页',
+		movie:{
+			director:'',
+			country:'',
+			title:'',
+			year:'',
+			poster:'',
+			language:'',
+			flash:'',
+			summary:''
+		}
+	});
+});
+
+//list delete movie
+app.delete('/admin/list', function(req,res){
+	var id = req.query.id;
+
+	if(id){
+		Movie.remove({_id: id}, function(err, movie){
+			if(err){
+				console.log(err);
+			}else{
+				res.json({success: 1});
+			}
+		});
+	}
 });
